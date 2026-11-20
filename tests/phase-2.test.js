@@ -28,7 +28,7 @@ function run(t, { night = 1, ticks = 1, frames = [], interval = 1, scenario = {}
 }
 const event = (run, name) => run.events.find((e) => e.name === name);
 
-test('v1.1 maps and spawn schedule are deterministic', (t) => {
+test('standard maps and spawn schedule are deterministic', (t) => {
   const opts = { ticks: 300, interval: 60, scenario: { random_motes: true, random_shades: true } };
   const first = run(t, opts);
   assert.equal(first.raw, run(t, opts).raw);

@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { HZ, LOW_FUEL, MAX_FUEL } from '../game/simulation.js';
 import { ground, rampAngles } from '../game/maps.js';
 
 const color = {
@@ -134,7 +135,19 @@ export function createView(container) {
       const light = new THREE.PointLight(color.lantern, 0, 10);
       light.position.y = 1.65;
       group.add(light);
-      return { bulb, center, light };
+      const tears = new THREE.Group();
+      group.add(tears);
+      for (const side of [-1, 1]) {
+        const tear = owned(tears, new THREE.BoxGeometry(0.07, 0.28, 0.026), shade,
+          [side * 0.12, 1.56, side * 0.36]);
+        tear.rotation.z = side * 0.6;
+      }
+      const gauge = new THREE.Group();
+      gauge.position.y = 2.24;
+      group.add(gauge);
+      owned(gauge, new THREE.PlaneGeometry(1.1, 0.15), shade, [0, 0, 0]);
+      const fill = owned(gauge, new THREE.PlaneGeometry(1, 0.09), gold, [0, 0, 0.01]);
+      return { bulb, center, light, tears, gauge, fill };
     });
     leaves = Array.from({ length: 16 }, () => place(layers, windLeaf, gold, [0, 0, 0]));
   }
@@ -165,6 +178,10 @@ export function createView(container) {
         const core = place(layers, shadeShape, shade, [0, 0, 0]);
         const edge = place(core, shadeShape, rim, [0, 0.49, 0]);
         edge.scale.set(0.87, 0.4, 0.87);
+        for (const side of [-1, 1]) {
+          const eye = place(core, orb, rim, [side * 0.22, 0.11, -0.59]);
+          eye.scale.setScalar(0.65);
+        }
         return core;
       });
       mesh.material = item.state === 'stunned' ? stun : shade;
@@ -204,9 +221,17 @@ export function createView(container) {
     pulseMaterial.opacity = Math.max(0, 1 - pulseAge / 24);
     ambient.intensity = 0.15 + 0.55 * game.lanterns.filter((l) => l.lit).length / game.lanterns.length;
     game.lanterns.forEach((l, i) => {
-      lanterns[i].bulb.material = l.lit ? lit : dark;
-      lanterns[i].center.visible = l.lit;
-      lanterns[i].light.intensity = l.lit ? 35 : 0;
+      const { bulb, center, light, tears, gauge, fill } = lanterns[i];
+      const flash = l.lit && l.fuelUnits < LOW_FUEL && game.sim_tick % HZ >= HZ / 2;
+      bulb.material = l.lit && !flash ? lit : dark;
+      bulb.scale.setScalar(l.lit ? 1 : 0.8);
+      center.visible = l.lit && !flash;
+      tears.visible = !l.lit;
+      light.intensity = l.lit ? (flash ? 5 : 35) : 0;
+      gauge.visible = l.lit && !flash;
+      const ratio = l.fuelUnits / MAX_FUEL;
+      fill.scale.x = ratio;
+      fill.position.x = (ratio - 1) / 2;
     });
     dynamic(game, now);
     leaves.forEach((leaf, index) => {
@@ -225,6 +250,7 @@ export function createView(container) {
     if (cameraFloor !== null) camera.position.y = Math.max(camera.position.y, cameraFloor + 1);
     camera.lookAt(character.position.x + Math.sin(angle) * 2, character.position.y + 0.75,
       character.position.z + Math.cos(angle) * 2);
+    for (const { gauge } of lanterns) gauge.quaternion.copy(camera.quaternion);
     renderer.render(scene, camera);
   }
   function offscreen(pos) {
@@ -235,5 +261,7 @@ export function createView(container) {
     if (cameraSpace.z < 0 && Math.abs(project.x) <= 0.9 && Math.abs(project.y) <= 0.83) return null;
     return Math.atan2(cameraSpace.x, cameraSpace.z < 0 ? cameraSpace.y : -Math.abs(cameraSpace.y) - 1);
   }
-  return { canvas: renderer.domElement, onFrame: (callback) => renderer.setAnimationLoop(callback), reset, render, offscreen };
+  const setAccessiblePalette = (enabled) => rim.color.setHex(enabled ? 0x00b3ff : color.rim);
+  return { canvas: renderer.domElement, onFrame: (callback) => renderer.setAnimationLoop(callback),
+    reset, render, offscreen, setAccessiblePalette };
 }

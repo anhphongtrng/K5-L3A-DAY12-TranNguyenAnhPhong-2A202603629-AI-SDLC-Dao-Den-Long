@@ -1,4 +1,4 @@
-import { createGame, HZ, nearestLantern, step, tuning } from '../game/simulation.js';
+import { capacity, createGame, HZ, interactionLantern, lanternCost, nearestLantern, step, tuning } from '../game/simulation.js';
 import { horizontal, maps } from '../game/maps.js';
 import { createAudio } from './audio.js';
 import { createView } from './view.js';
@@ -9,9 +9,9 @@ const seed = 202603629;
 const keyCodes = new Set(['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowDown', 'ArrowLeft',
   'ArrowRight', 'Space', 'KeyE', 'KeyR', 'ShiftLeft', 'ShiftRight', 'KeyP', 'Escape']);
 const intro = {
-  1: 'Ông Đăng: Mây ơi, hãy gom đom đóm và thắp sáng năm ngọn đèn trên Đảo Bến.',
-  2: 'Ông Đăng: Cầu tre nối hai bờ. Hãy dùng bục nhảy và coi chừng Gió Lạc.',
-  3: 'Ông Đăng: Theo dốc lên tầng cao và dùng bục nhảy để tới tháp chuông.',
+  1: 'Ông Đăng: Thắp và châm dầu để giữ ít nhất 3 đèn sáng tới bình minh.',
+  2: 'Ông Đăng: Giữ 4 đèn sáng tới bình minh. Dùng bục nhảy để qua đảo và coi chừng Gió Lạc.',
+  3: 'Ông Đăng: Giữ 5 đèn sáng tới bình minh. Theo dốc và bục nhảy để tới tháp chuông.',
 };
 const metric = new URLSearchParams(location.search).has('fps');
 function settingsValue(id, fallback) {
@@ -23,7 +23,18 @@ function start() {
   const audio = createAudio();
   const keys = new Set();
   const pending = new Set();
-  const slots = Array.from({ length: 10 }, () => $('motes').appendChild(document.createElement('span')));
+  const slots = Array.from({ length: tuning.capacity_max }, () => $('motes').appendChild(document.createElement('span')));
+  const palette = $('accessible-palette');
+  palette.checked = localStorage.getItem('lantern:accessible-palette') === 'true';
+  function applyPalette() {
+    document.documentElement.classList.toggle('accessible-palette', palette.checked);
+    view.setAccessiblePalette(palette.checked);
+  }
+  palette.addEventListener('change', () => {
+    localStorage.setItem('lantern:accessible-palette', String(palette.checked));
+    applyPalette();
+  });
+  applyPalette();
   let sensitivity = settingsValue('sensitivity', 0.45);
   let night = 1;
   let total = 0;
@@ -122,7 +133,7 @@ function start() {
     if (result === 'won') total += game.score;
     const title = result === 'won' ? (night === 3 ? 'Bình Minh' : 'Đảo đã sáng!') : 'Đêm đã kết thúc';
     const copy = result === 'won' ? 'Điểm Đêm ' + night + ' là ' + game.score + ' · Tổng điểm ' + total
-      : reason === 'no_flames' ? 'Mây đã hết Ngọn Lửa.' : 'Đã hết thời gian để thắp đèn.';
+      : reason === 'no_flames' ? 'Mây đã hết Ngọn Lửa.' : 'Bình minh đến khi chưa đủ đèn đang sáng.';
     const actions = result === 'lost' ? [['Chơi lại Đêm', startNight]]
       : night < 3 ? [['Đêm kế tiếp', () => { night += 1; briefing(); }]] : [];
     panel('result', title, copy, [...actions, ['Về menu', menu]]);
@@ -187,18 +198,27 @@ function start() {
     const seconds = Math.ceil(game.time_left_s);
     const lit = game.lanterns.filter((l) => l.lit).length;
     $('flames').textContent = 'Ngọn Lửa ' + '◆'.repeat(p.flames) + '◇'.repeat(tuning.flames - p.flames);
-    $('time').textContent = String(Math.floor(seconds / 60)).padStart(2, '0') + ':' + String(seconds % 60).padStart(2, '0');
+    $('time').textContent = (palette.checked && seconds <= 30 ? '⚠ ' : '') +
+      String(Math.floor(seconds / 60)).padStart(2, '0') + ':' + String(seconds % 60).padStart(2, '0');
     $('time').classList.toggle('danger', seconds <= 30);
-    $('score').textContent = 'Đèn ' + lit + '/' + game.lanterns.length + ' · Điểm ' + game.score;
-    slots.forEach((slot, index) => slot.classList.toggle('filled', index < p.carried));
-    $('motes').setAttribute('aria-label', 'Đom đóm ' + p.carried + '/10');
+    const need = Math.ceil(tuning.win_ratio * game.lanterns.length);
+    $('score').textContent = 'Đèn ' + lit + '/' + game.lanterns.length + ' · Cần ' + need + ' · Điểm ' + game.score;
+    const limit = capacity(p.successfulLights);
+    slots.forEach((slot, index) => {
+      slot.hidden = index >= limit;
+      slot.classList.toggle('filled', index < p.carried);
+    });
+    $('capacity').textContent = 'Đom đóm ' + p.carried + '/' + limit;
     const charm = remaining(p.charmUntil);
     $('cooldowns').textContent = '⇢ Lướt ' + (charm ? 'Sẵn sàng' : remaining(p.dashReady).toFixed(1) + 's') +
       ' · ✧ Tỏa Sáng ' + remaining(p.pulseReady).toFixed(1) + 's' + (charm ? ' · Bùa ' + charm.toFixed(1) + 's' : '');
     const target = nearestLantern(game);
-    $('prompt').textContent = target && horizontal(p.pos, target.pos) <= tuning.interact_radius
-      ? 'E — Nạp ánh sáng (' + target.deposited + '/10)' : '';
-    $('wind').textContent = game.wind.warning ? 'Gió mạnh sắp tới' : game.wind.active ? 'Gió mạnh' : '';
+    const interact = interactionLantern(game);
+    $('prompt').textContent = interact && horizontal(p.pos, interact.pos) <= tuning.interact_radius
+      ? interact.lit ? 'E — Châm dầu (' + (interact.fuelUnits / HZ).toFixed(1) + '/100)'
+        : 'E — Nạp ánh sáng (' + interact.deposited + '/' + lanternCost(interact) + ')' : '';
+    $('wind').textContent = game.wind.warning || game.wind.active
+      ? (palette.checked ? '⚠ ' : '') + (game.wind.warning ? 'Gió mạnh sắp tới' : 'Gió mạnh') : '';
     const arrow = target && view.offscreen(target.pos);
     $('indicator').hidden = !target || arrow === null;
     if (target && arrow !== null) $('indicator').style.transform = 'rotate(' + arrow + 'rad)';

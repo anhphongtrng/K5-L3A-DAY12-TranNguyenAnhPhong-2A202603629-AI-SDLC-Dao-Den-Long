@@ -1,6 +1,6 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { parseArgs } from 'node:util';
-import { createGame, idleInput, snapshot, step, tuning } from './game/simulation.js';
+import { capacity, createGame, idleInput, snapshot, step, tuning } from './game/simulation.js';
 import { maps } from './game/maps.js';
 
 const object = (value) => value !== null && typeof value === 'object' && !Array.isArray(value);
@@ -18,7 +18,8 @@ function validScenario(scenario, night) {
   return object(scenario) &&
     optional(scenario, 'player', (player) => object(player) &&
       optional(player, 'pos', position) &&
-      optional(player, 'carried', (value) => integer(value) && value <= tuning.carry_capacity) &&
+      optional(player, 'successful_lights', integer) &&
+      optional(player, 'carried', (value) => integer(value) && value <= capacity(player.successful_lights ?? 0)) &&
       optional(player, 'flames', integer) &&
       ['invuln_ticks', 'dash_cd_ticks', 'pulse_cd_ticks', 'charm_ticks']
         .every((key) => optional(player, key, integer))) &&
@@ -30,7 +31,8 @@ function validScenario(scenario, night) {
     optional(scenario, 'motes', arrayOf(position)) &&
     optional(scenario, 'shades', (shades) => arrayOf((shade) => object(shade) &&
       position(shade.pos) && optional(shade, 'id', name) &&
-      optional(shade, 'state', (state) => ['spawning', 'wander', 'chase', 'recoil', 'stunned'].includes(state)) &&
+      optional(shade, 'state', (state) => ['spawning', 'wander', 'chase', 'recoil', 'stunned', 'drain'].includes(state)) &&
+      optional(shade, 'target_lantern_id', (id) => lanternIds.includes(id)) &&
       optional(shade, 'state_ticks_left', integer))(shades) &&
       unique(shades.flatMap((shade) => shade.id === undefined ? [] : [shade.id]))) &&
     optional(scenario, 'drifters', (drifters) => arrayOf((d) => object(d) && position(d.pos) &&
@@ -47,6 +49,8 @@ function validScenario(scenario, night) {
     optional(scenario, 'lanterns', (lanterns) => arrayOf((lantern) => object(lantern) &&
       lanternIds.includes(lantern.id) && optional(lantern, 'pos', position) &&
       optional(lantern, 'lit', bool) &&
+      optional(lantern, 'ever_lit', bool) &&
+      optional(lantern, 'fuel', (value) => Number.isFinite(value) && value >= 0 && value <= tuning.fuel_max) &&
       optional(lantern, 'deposited', (value) => integer(value) && value <= tuning.lantern_cost))(lanterns) &&
       unique(lanterns.map((lantern) => lantern.id)));
 }

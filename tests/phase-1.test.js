@@ -30,20 +30,19 @@ test('default snapshots, deterministic seed, explicit interval and terminal summ
   assert.deepEqual(first.records.at(-1), { type: 'end', ticks: 21, state: 'playing', score: 0 });
 });
 
-test('CLI picks up, deposits and wins on the first input tick', (t) => {
+test('CLI picks up and lights the last lantern without ending the night', (t) => {
   const result = run(t, ['--ticks', '10', '--scenario', 'tests/fixtures/final-lantern.json',
     '--inputs', 'tests/fixtures/interact.json']);
   assert.equal(result.status, 0, result.stderr);
   assert.equal(result.records[0].tick, 0);
   assert.equal(result.records[0].player.carried, 9);
   assert.deepEqual(result.records[1], { type: 'event', tick: 0, name: 'night_start', data: { night: 1 } });
-  assert.deepEqual(result.records.slice(2, -1), [
+  assert.deepEqual(result.records.slice(2, -1).filter((record) => record.type === 'event'), [
     { type: 'event', tick: 1, name: 'mote_picked', data: { carried: 10 } },
     { type: 'event', tick: 1, name: 'deposit', data: { lantern_id: 'L1', amount: 10, deposited: 10 } },
-    { type: 'event', tick: 1, name: 'lantern_lit', data: { lantern_id: 'L1' } },
-    { type: 'event', tick: 1, name: 'game_over', data: { result: 'won', reason: 'all_lit' } },
+    { type: 'event', tick: 1, name: 'lantern_lit', data: { lantern_id: 'L1', relight: false } },
   ]);
-  assert.deepEqual(result.records.at(-1), { type: 'end', ticks: 1, state: 'won', score: 408 });
+  assert.deepEqual(result.records.at(-1), { type: 'end', ticks: 10, state: 'playing', score: 150 });
 });
 
 test('CLI pulse stuns only the nearby shade, then a hit ends the run', (t) => {
@@ -106,7 +105,7 @@ test('lit lantern protects the player and hurt invulnerability lasts 90 ticks', 
   assert.equal(step(unsafe)[0].data.flames, 1);
 });
 
-test('standard Night 1 supplies enough motes over time to light all five lanterns', () => {
+test('standard Night 1 supplies enough motes to meet the dawn threshold', () => {
   // Isolate supply and route progression. Enemy hazards are exercised by separate tests.
   const game = createGame(202603629, { random_shades: false });
   const distance = (a, b) => Math.hypot(a[0] - b[0], a[2] - b[2]);
@@ -130,5 +129,5 @@ test('standard Night 1 supplies enough motes over time to light all five lantern
     });
   }
   assert.equal(game.state, 'won');
-  assert.equal(game.lanterns.filter((lantern) => lantern.lit).length, 5);
+  assert.ok(game.lanterns.filter((lantern) => lantern.lit).length >= 3);
 });

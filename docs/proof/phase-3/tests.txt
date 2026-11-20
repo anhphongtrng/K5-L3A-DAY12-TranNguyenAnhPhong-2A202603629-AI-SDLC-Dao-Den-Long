@@ -1,0 +1,35 @@
+
+> dao-den-long@0.1.0 test
+> node --test
+
+✔ default snapshots, deterministic seed, explicit interval and terminal summary (220.2837ms)
+✔ CLI picks up and lights the last lantern without ending the night (63.731ms)
+✔ CLI pulse stuns only the nearby shade, then a hit ends the run (74.2197ms)
+✔ CLI rejects malformed input and scenario with exit code 2 (113.5119ms)
+✔ movement normalizes diagonals and rotates with camera yaw (1.4521ms)
+✔ jump is edge-triggered, dawn stops the game, and a new game resets state (1.2459ms)
+✔ lit lantern protects the player and hurt invulnerability lasts 90 ticks (7.4567ms)
+✔ standard Night 1 supplies enough motes to meet the dawn threshold (44.6153ms)
+✔ standard maps and spawn schedule are deterministic (300.9647ms)
+✔ pause freezes sim_tick, dash cooldown and dropped mote TTL (70.1497ms)
+✔ dash lasts 12 ticks, preserves airborne height and respects held-button edge (71.9777ms)
+✔ fall ignores invulnerability and respawns exactly 60 ticks later (77.1695ms)
+✔ the bridge, both types of jump pad, and summit ramp are traversable (328.9022ms)
+✔ wind warns before the first gust and pushes for five seconds (92.8714ms)
+✔ drifter steals before the shade hit, and pulse recovers the stolen motes (131.5878ms)
+✔ charm accelerates running, lifts dash cooldown, expires and respawns (108.7297ms)
+✔ fuel expires exactly after 6000 ticks and relighting costs five (22.5921ms)
+✔ refueling rounds up, clamps at full, and picks the lowest id on a tie (0.2755ms)
+✔ two draining shades stack, report every 60 ticks, and stop during pause (1.1108ms)
+✔ wander targets weak lights by id while chase stays focused on the player (0.3023ms)
+✔ pulse interrupts drain for 15 total points, and leaves the shade stunned (0.2576ms)
+✔ at 30 fuel a lantern is safe, and refueling ejects a shade at the island edge (0.6694ms)
+✔ dawn scores only surviving lights, and zero flames always loses (1.1233ms)
+ℹ tests 23
+ℹ suites 0
+ℹ pass 23
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1283.2175

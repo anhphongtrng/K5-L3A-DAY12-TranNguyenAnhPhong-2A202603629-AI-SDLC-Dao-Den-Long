@@ -24,9 +24,11 @@ Nếu PowerShell chặn `npm.ps1`, dùng `npm.cmd ci` và `npm.cmd run dev`. Dù
 | R | Tỏa sáng, tốn 3 đom đóm và làm choáng Bóng Mực trong tầm |
 | Esc / P | Tạm dừng |
 
-Đi qua đom đóm để nhặt tự động. Mỗi đèn cần 10 đom đóm và có thể nạp dần. Đèn đã sáng tạo vùng an toàn trước Bóng Mực. Thắp tất cả đèn khi vẫn còn Ngọn Lửa để mở Đêm tiếp theo. Nếu thua, chọn **Chơi lại Đêm**.
+Đi qua đom đóm để nhặt tự động. Lần đầu thắp cần 10 đom đóm, thắp lại cần 5. Bấm E gần đèn sáng để châm dầu. Đèn dưới 30 dầu nhấp nháy, mất vùng an toàn và có thể bị Bóng Mực hút dầu. Mỗi lần thắp tăng sức chứa thêm 2, tối đa 20.
 
-Điểm là 10 mỗi đom đóm đã nạp, 100 mỗi đèn và 5 mỗi Bóng Mực trúng Tỏa Sáng. Khi thắng, cộng 2 điểm mỗi giây nguyên còn lại và 50 điểm mỗi Ngọn Lửa còn lại. Bình Minh hiển thị tổng điểm ba Đêm đã thắng.
+Ở bình minh, Mây phải còn sống và giữ sáng ít nhất **3/5, 4/6 hoặc 5/7** đèn tùy Đêm. Thắng mở Đêm tiếp theo. Nếu thua, chọn **Chơi lại Đêm**. Bật **Bảng màu dễ phân biệt** trong Cài đặt để đổi viền Bóng Mực và cảnh báo.
+
+Mỗi đom đóm nạp hoặc châm dầu được 5 điểm. Thắp lần đầu được 100, thắp lại được 40. Tỏa Sáng được 5 mỗi Bóng Mực, hoặc 15 nếu nó đang hút dầu. Khi thắng, cộng 50 điểm mỗi Ngọn Lửa còn lại và 50 cộng phần nguyên của dầu cho từng đèn còn sáng.
 
 ### Kiểm chứng và headless
 
@@ -35,7 +37,7 @@ npm test
 node src/headless.js --seed 42 --night 1 --ticks 60 --out output.jsonl
 ```
 
-`--night` nhận 1, 2 hoặc 3. Có thể thêm `--scenario`, `--inputs` và `--snapshot-every`. Tần suất snapshot mặc định là 10 tick. Xem [Test Contract v1.1](game.contract.json), [tiêu chí nghiệm thu Phase 2](docs/notes/phase-2.md) và [bằng chứng Phase 2](docs/proof/phase-2/README.md). Bằng chứng Phase 1 tương ứng với tag `phase-1`.
+`--night` nhận 1, 2 hoặc 3. Có thể thêm `--scenario`, `--inputs` và `--snapshot-every`. Tần suất snapshot mặc định là 10 tick. Xem [Test Contract v1.2](game.contract.json), [quyết định thiết kế Phase 3](docs/notes/phase-3.md), [thay đổi tương thích](CHANGELOG.md) và [bằng chứng Phase 3](docs/proof/phase-3/README.md).
 
 ---
 
