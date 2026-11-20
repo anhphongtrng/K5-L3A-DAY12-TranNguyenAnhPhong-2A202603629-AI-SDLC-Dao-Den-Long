@@ -20,9 +20,9 @@ const place = (parent, geometry, material, pos) => {
 const cylinder = (r, h) => new THREE.CylinderGeometry(r, r, h, 48);
 const sphere = (r) => new THREE.IcosahedronGeometry(r, 1);
 
-export function createView(container) {
+export function createView(container, { pixelRatio = Math.min(window.devicePixelRatio, 1.5) } = {}) {
   const renderer = new THREE.WebGLRenderer({ antialias: true });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+  renderer.setPixelRatio(pixelRatio);
   container.append(renderer.domElement);
   renderer.domElement.tabIndex = 0;
   const scene = new THREE.Scene();
@@ -209,7 +209,7 @@ export function createView(container) {
     }
   }
 
-  function render(game, yaw, now, pulseAge) {
+  function render(game, yaw, now, pulseAge, orbit = null, reduceMotion = false) {
     character.position.fromArray(game.player.pos);
     character.rotation.y = Math.atan2(...game.player.face);
     character.visible = game.player.respawn === null &&
@@ -222,7 +222,7 @@ export function createView(container) {
     ambient.intensity = 0.15 + 0.55 * game.lanterns.filter((l) => l.lit).length / game.lanterns.length;
     game.lanterns.forEach((l, i) => {
       const { bulb, center, light, tears, gauge, fill } = lanterns[i];
-      const flash = l.lit && l.fuelUnits < LOW_FUEL && game.sim_tick % HZ >= HZ / 2;
+      const flash = !reduceMotion && l.lit && l.fuelUnits < LOW_FUEL && game.sim_tick % HZ >= HZ / 2;
       bulb.material = l.lit && !flash ? lit : dark;
       bulb.scale.setScalar(l.lit ? 1 : 0.8);
       center.visible = l.lit && !flash;
@@ -250,18 +250,23 @@ export function createView(container) {
     if (cameraFloor !== null) camera.position.y = Math.max(camera.position.y, cameraFloor + 1);
     camera.lookAt(character.position.x + Math.sin(angle) * 2, character.position.y + 0.75,
       character.position.z + Math.cos(angle) * 2);
+    if (orbit !== null) {
+      camera.position.set(30 * Math.cos(orbit), 15, 30 * Math.sin(orbit));
+      camera.lookAt(0, 0, 0);
+    }
     for (const { gauge } of lanterns) gauge.quaternion.copy(camera.quaternion);
     renderer.render(scene, camera);
   }
-  function offscreen(pos) {
+  function offscreen(pos, always = false) {
     project.fromArray(pos);
     project.y += 1.5;
     const cameraSpace = project.clone().applyMatrix4(camera.matrixWorldInverse);
     project.project(camera);
-    if (cameraSpace.z < 0 && Math.abs(project.x) <= 0.9 && Math.abs(project.y) <= 0.83) return null;
+    if (!always && cameraSpace.z < 0 && Math.abs(project.x) <= 0.9 && Math.abs(project.y) <= 0.83) return null;
     return Math.atan2(cameraSpace.x, cameraSpace.z < 0 ? cameraSpace.y : -Math.abs(cameraSpace.y) - 1);
   }
   const setAccessiblePalette = (enabled) => rim.color.setHex(enabled ? 0x00b3ff : color.rim);
-  return { canvas: renderer.domElement, onFrame: (callback) => renderer.setAnimationLoop(callback),
+  return { canvas: renderer.domElement, renderer: 'Three.js r' + THREE.REVISION + ' / WebGL 2',
+    onFrame: (callback) => renderer.setAnimationLoop(callback),
     reset, render, offscreen, setAccessiblePalette };
 }

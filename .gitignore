@@ -1,5 +1,7 @@
 node_modules/
 dist/
+.lantern-data/
+release/
 .vs/
 .env
 .env.*

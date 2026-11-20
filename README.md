@@ -1,18 +1,24 @@
 # Day 12 — AI SDLC: Đảo Đèn Lồng
 
+**[Video demo (.mp4, 2 phút)](docs/demo/demo.mp4)**
+
 > **Cá nhân** (1 người / 1 MSSV) · Áp dụng SDLC cùng AI để xây một **game 3D** qua **4 phase**, từ yêu cầu ban đầu tới bản phát hành.
 > **Lab board + trợ giảng:** **[Đảo Đèn Lồng Lab](https://claude.ai/artifact/Q1RYyv1dxjUczzCbd2ZnoW)**
 
 ## Chơi ba Đêm
 
-Cần Node.js 22.12+ và npm. Chạy từ gốc repo rồi mở địa chỉ **Local** mà Vite in ra.
+Mây thu thập đom đóm, xua Bóng Mực và giữ đèn sáng đến bình minh trên ba hòn đảo.
+
+![Đêm 1 trên Đảo Bến với HUD và cảnh báo Bóng Mực](docs/proof/phase-4/game.jpg)
+
+Cần Node.js 22.12+ và npm, cùng trình duyệt máy tính hỗ trợ WebGL 2. Sau khi clone, chạy từ gốc repo rồi mở địa chỉ **Local** ở terminal.
 
 ```bash
 npm ci
-npm run dev
+npm start
 ```
 
-Nếu PowerShell chặn `npm.ps1`, dùng `npm.cmd ci` và `npm.cmd run dev`. Dùng `npm run build` để tạo bản web trong `dist/`.
+Nếu PowerShell chặn `npm.ps1`, dùng `npm.cmd ci` và `npm.cmd start`. Dùng `npm run build` để tạo bản web tĩnh trong `dist/`.
 
 | Phím | Hành động |
 |---|---|
@@ -28,6 +34,8 @@ Nếu PowerShell chặn `npm.ps1`, dùng `npm.cmd ci` và `npm.cmd run dev`. Dù
 
 Ở bình minh, Mây phải còn sống và giữ sáng ít nhất **3/5, 4/6 hoặc 5/7** đèn tùy Đêm. Thắng mở Đêm tiếp theo. Nếu thua, chọn **Chơi lại Đêm**. Bật **Bảng màu dễ phân biệt** trong Cài đặt để đổi viền Bóng Mực và cảnh báo.
 
+Trong **Cài đặt**, có thể đổi từng phím, khôi phục mặc định, bật Giảm chuyển động và Chữ lớn. HUD dùng cỡ chữ 18 px ở mức thường, 22,5 px ở mức chữ lớn.
+
 Mỗi đom đóm nạp hoặc châm dầu được 5 điểm. Thắp lần đầu được 100, thắp lại được 40. Tỏa Sáng được 5 mỗi Bóng Mực, hoặc 15 nếu nó đang hút dầu. Khi thắng, cộng 50 điểm mỗi Ngọn Lửa còn lại và 50 cộng phần nguyên của dầu cho từng đèn còn sáng.
 
 ### Kiểm chứng và headless
@@ -37,7 +45,26 @@ npm test
 node src/headless.js --seed 42 --night 1 --ticks 60 --out output.jsonl
 ```
 
-`--night` nhận 1, 2 hoặc 3. Có thể thêm `--scenario`, `--inputs` và `--snapshot-every`. Tần suất snapshot mặc định là 10 tick. Xem [Test Contract v1.2](game.contract.json), [quyết định thiết kế Phase 3](docs/notes/phase-3.md), [thay đổi tương thích](CHANGELOG.md) và [bằng chứng Phase 3](docs/proof/phase-3/README.md).
+`--night` nhận 1, 2 hoặc 3. Có thể thêm `--scenario`, `--inputs` và `--snapshot-every`. Tần suất snapshot mặc định là 10 tick. Xem [Test Contract v1.3](game.contract.json), [changelog](CHANGELOG.md) và [bằng chứng Phase 4](docs/proof/phase-4/README.md).
+
+### Benchmark và soak
+
+```sh
+node scripts/bench.js --seed 42 --duration 30 --out bench.json
+node scripts/soak.js --seed 7 --nights 10 --out soak.json
+```
+
+Benchmark mở Chromium có cửa sổ với vùng render 1280×720. Trên Windows nó dùng Edge nếu Chromium của Playwright chưa cài. Trên macOS/Linux, tải Chromium bằng `npx playwright install chromium` hoặc đặt `LANTERN_CHROMIUM` trỏ vào executable Chromium có sẵn. Linux cần phiên desktop có thể mở cửa sổ và thư viện hệ thống Chromium tương ứng. Trình duyệt đồng bộ khung hình theo màn hình nên `vsync_off: false`. Trình duyệt tách nhiều tiến trình và trang web không đọc được RSS của toàn bộ chúng, nên `peak_mem_mb: null`. Kết quả máy cá nhân tham khảo trong [bench.json](bench.json) và [soak.json](soak.json).
+
+### Bảng xếp hạng và bản web tĩnh
+
+Nhập tên sau khi thua hoặc ở Bình Minh. Khi chạy bằng npm, top 10 lưu tại `.lantern-data/leaderboard.json` trong repo local. Xuất bảng điểm với:
+
+```sh
+node scripts/run.js --export-leaderboard out.json
+```
+
+Bản web tĩnh có thể phục vụ từ thư mục giải nén bằng máy chủ HTTP tĩnh, ví dụ `python3 -m http.server 8080 --bind 127.0.0.1`. Bản này lưu bảng điểm trong hồ sơ trình duyệt theo địa chỉ đang mở. Dùng bản chạy qua npm nếu cần xuất bảng điểm bằng CLI.
 
 ---
 

@@ -42,3 +42,17 @@ footer, #scene-error { position: fixed; bottom: 1rem; left: 1rem; right: 1rem; t
   #prompt { bottom: 11.8rem; }
 }
 @media (prefers-reduced-motion: reduce) { #time.danger { animation: none; } }
+:root { font-size: 18px; }
+:root.large-text { font-size: 22.5px; }
+#hud, footer, #scene-error { font-size: 1rem; }
+#panel { max-height: 86vh; overflow: auto; }
+#bindings { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+#bindings button { padding: 0.35em 0.55em; }
+#save-score { margin-block: 1rem; }
+#save-score label { display: block; }
+#player-name { font: inherit; width: 100%; margin: 0.4rem 0; }
+#warnings { top: 7rem; left: 50%; transform: translateX(-50%); text-align: center; }
+#warnings:empty, #binding-status:empty, #save-status:empty { display: none; }
+#shade-marker { color: #ff5a5f; }
+.accessible-palette #shade-marker { color: #fff; }
+.reduce-motion #time.danger { animation: none; }

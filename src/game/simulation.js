@@ -20,7 +20,7 @@ const direction = (from, to) => {
 const near = (a, b, r) => horizontal(a, b) <= r && Math.abs(a[1] - b[1]) <= 1.5;
 const inLight = (p, lights) => lights.some((l) => horizontal(p, l.pos) <= tuning.safe_radius);
 const tower = (night, p) => night === 3 && p[1] >= 5.99 && p[1] < 14 && Math.hypot(p[0], p[2]) < 2;
-function randomFrom(seed) {
+export function randomFrom(seed) {
   let state = seed >>> 0;
   return () => {
     state = (Math.imul(state, 1664525) + 1013904223) >>> 0;
@@ -391,7 +391,7 @@ function updateShades(game, lights) {
     if (shade.state === 'spawning') continue;
     const distance = horizontal(game.player.pos, shade.pos);
     if (shade.state === 'chase' && distance > 18) shade.state = 'wander';
-    if (shade.state === 'wander' && distance <= 12) shade.state = 'chase';
+    if (!game.benchmark && shade.state === 'wander' && distance <= 12) shade.state = 'chase';
     const weak = (l) => l.lit && l.fuelUnits < LOW_FUEL;
     const target = shade.state === 'chase' ? null : nearest(game.lanterns, shade.pos, weak) ??
       nearest(game.lanterns, shade.pos, (l) => !l.lit);
@@ -490,13 +490,15 @@ export function step(game, input = idleInput) {
   }
   if (game.state === 'paused') return events;
   game.sim_tick += 1;
-  game.time_left_s = Math.max(0, game.duration - game.sim_tick / HZ);
-  burnFuel(game, emit);
+  if (!game.benchmark) {
+    game.time_left_s = Math.max(0, game.duration - game.sim_tick / HZ);
+    burnFuel(game, emit);
+  }
   game.motes = game.motes.filter((m) => m.expires === null || m.expires > game.sim_tick);
   for (const c of game.charms) if (!c.available && c.readyAt <= game.sim_tick) c.available = true;
   updateWind(game);
   movePlayer(game, input, pressed, emit);
-  if (game.player.respawn === null) {
+  if (!game.benchmark && game.player.respawn === null) {
     collect(game, emit);
     if (pressed.interact) deposit(game, emit);
   }
@@ -504,6 +506,7 @@ export function step(game, input = idleInput) {
   if (game.player.respawn === null && pressed.pulse) pulse(game, emit);
   updateShades(game, lights);
   updateDrifters(game);
+  if (game.benchmark) return events;
   contacts(game, lights, emit);
   spawn(game, lights, emit);
   const lit = game.lanterns.filter((l) => l.lit);

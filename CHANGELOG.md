@@ -1,5 +1,12 @@
 # Thay đổi theo phase
 
+## Phase 4 · Bình minh
+
+- Test Contract v1.3 có lệnh benchmark Chromium và soak dùng mô phỏng headless.
+- Thêm bảng xếp hạng top 10, lưu điểm trên máy và xuất JSON từ CLI.
+- Thêm đổi phím, cảnh báo hình ảnh, giảm chuyển động và chữ lớn.
+- Chuẩn bị gói web tĩnh, bằng chứng đo và retro.
+
 ## Phase 3 · Đèn cạn dầu
 
 Thay đổi phá vỡ tương thích từ Contract v1.1 sang v1.2.
@@ -9,3 +16,13 @@ Thay đổi phá vỡ tương thích từ Contract v1.1 sang v1.2.
 - Bóng Mực có trạng thái `drain`. Scenario nhận `target_lantern_id`; có thêm sự kiện `fuel_drain`. Đèn dưới 30 dầu không tạo vùng an toàn.
 - Snapshot người chơi thêm `capacity`; scenario nhận `successful_lights`. Sức chứa tăng theo số lần thắp trong Đêm.
 - Điểm nạp giảm còn 5 mỗi đom đóm. Thắp lại cho 40 điểm. Pulse trúng Bóng Mực đang hút cho 15 điểm tổng cộng. Thay thưởng thời gian bằng thưởng đèn và nhiên liệu ở bình minh.
+
+## Phase 2 · Ba hòn đảo
+
+- Chuẩn hóa tuning, mở ba Đêm, thêm lướt, địa hình nhiều tầng, Bùa Gió, Gió Lạc và tạm dừng.
+- Contract v1.1 thêm bản đồ, trạng thái, scenario và trường đầu ra.
+
+## Phase 1 · Đảo Bến
+
+- Xây Đêm 1 với thu thập, thắp đèn, Bóng Mực, điểm và chơi lại.
+- Thêm CLI tất định theo Contract v1.0 và kiểm chứng JSONL.

@@ -1,0 +1,12 @@
+{
+  "contract_version": "1.3",
+  "avg_fps": 164.72470870630593,
+  "p1_low_fps": 129.29919834497397,
+  "frame_ms_p95": 6.300000000000182,
+  "frames": 4941,
+  "renderer": "Three.js r187 / WebGL 2",
+  "load_ms": 978,
+  "peak_mem_mb": null,
+  "vsync_off": false,
+  "os": "Windows_NT 10.0.26200 x64"
+}

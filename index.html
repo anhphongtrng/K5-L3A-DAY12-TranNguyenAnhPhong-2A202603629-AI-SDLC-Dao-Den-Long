@@ -17,6 +17,8 @@
     <p id="prompt"></p>
     <div id="indicator" aria-label="Hướng tới đèn chưa sáng" hidden>↑</div>
     <p id="wind"></p>
+    <p id="warnings" role="status"></p>
+    <div id="shade-marker" aria-hidden="true" hidden>▲</div>
     <p id="fps" hidden></p>
   </div>
   <section id="panel" aria-labelledby="panel-title">
@@ -26,7 +28,19 @@
       <label>Âm lượng <input id="volume" type="range" min="0" max="1" step="0.05"></label>
       <label>Độ nhạy chuột <input id="sensitivity" type="range" min="0.1" max="1" step="0.05"></label>
       <label class="option"><input id="accessible-palette" type="checkbox"> Bảng màu dễ phân biệt</label>
+      <label class="option"><input id="reduce-motion" type="checkbox"> Giảm chuyển động</label>
+      <label class="option"><input id="large-text" type="checkbox"> Chữ lớn</label>
+      <div id="bindings" aria-label="Đổi phím"></div>
+      <p id="binding-status" role="status"></p>
+      <button type="button" id="reset-bindings">Khôi phục mặc định</button>
     </div>
+    <form id="save-score" hidden>
+      <label for="player-name">Tên người chơi (3–12 chữ, số hoặc dấu gạch dưới)</label>
+      <input id="player-name" required minlength="3" maxlength="12" pattern="[A-Za-z0-9_]{3,12}" autocomplete="off">
+      <button type="submit">Lưu điểm</button>
+      <p id="save-status" role="status"></p>
+    </form>
+    <ol id="leaderboard" hidden></ol>
     <div id="actions"></div>
   </section>
   <footer>WASD / ↑↓←→ di chuyển · Kéo chuột xoay camera · Space nhảy · Shift lướt · E nạp · R tỏa sáng · Esc/P tạm dừng</footer>

@@ -1,0 +1,36 @@
+
+> dao-den-long@1.0.0 test
+> node --test
+
+✔ default snapshots, deterministic seed, explicit interval and terminal summary (224.6608ms)
+✔ CLI picks up and lights the last lantern without ending the night (66.3098ms)
+✔ CLI pulse stuns only the nearby shade, then a hit ends the run (68.6429ms)
+✔ CLI rejects malformed input and scenario with exit code 2 (147.2809ms)
+✔ movement normalizes diagonals and rotates with camera yaw (1.4544ms)
+✔ jump is edge-triggered, dawn stops the game, and a new game resets state (1.068ms)
+✔ lit lantern protects the player and hurt invulnerability lasts 90 ticks (8.4701ms)
+✔ standard Night 1 supplies enough motes to meet the dawn threshold (48.8056ms)
+✔ standard maps and spawn schedule are deterministic (338.0492ms)
+✔ pause freezes sim_tick, dash cooldown and dropped mote TTL (85.2172ms)
+✔ dash lasts 12 ticks, preserves airborne height and respects held-button edge (83.3051ms)
+✔ fall ignores invulnerability and respawns exactly 60 ticks later (108.9108ms)
+✔ the bridge, both types of jump pad, and summit ramp are traversable (386.6025ms)
+✔ wind warns before the first gust and pushes for five seconds (91.2182ms)
+✔ drifter steals before the shade hit, and pulse recovers the stolen motes (175.0203ms)
+✔ charm accelerates running, lifts dash cooldown, expires and respawns (107.4362ms)
+✔ fuel expires exactly after 6000 ticks and relighting costs five (21.2225ms)
+✔ refueling rounds up, clamps at full, and picks the lowest id on a tie (0.2942ms)
+✔ two draining shades stack, report every 60 ticks, and stop during pause (1.1562ms)
+✔ wander targets weak lights by id while chase stays focused on the player (0.2974ms)
+✔ pulse interrupts drain for 15 total points, and leaves the shade stunned (0.2433ms)
+✔ at 30 fuel a lantern is safe, and refueling ejects a shade at the island edge (0.7033ms)
+✔ dawn scores only surviving lights, and zero flames always loses (1.0518ms)
+✔ leaderboard validates names, keeps the top ten and breaks ties by achievement time (2.7043ms)
+ℹ tests 24
+ℹ suites 0
+ℹ pass 24
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1492.7069
