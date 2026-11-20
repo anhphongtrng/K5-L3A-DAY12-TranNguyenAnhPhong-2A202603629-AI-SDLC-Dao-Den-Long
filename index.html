@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Đảo Đèn Lồng</title>
+  </head>
+  <body>
+    <main id="scene" aria-label="Đảo Bến trong khung cảnh đêm"></main>
+    <header>
+      <h1>Đảo Đèn Lồng</h1>
+      <p>Đêm 1 · Đảo Bến</p>
+      <dl id="hud">
+        <div><dt>Máu</dt><dd id="flames"></dd></div>
+        <div><dt>Đom đóm</dt><dd id="carried"></dd></div>
+        <div><dt>Đèn sáng</dt><dd id="lit"></dd></div>
+        <div><dt>Còn lại</dt><dd id="time"></dd></div>
+        <div><dt>Điểm</dt><dd id="score"></dd></div>
+      </dl>
+    </header>
+    <footer>WASD / phím mũi tên: di chuyển · Q / E: xoay camera · Space: nhảy · F: nạp đèn · R: tỏa sáng</footer>
+    <section id="result" aria-live="polite" hidden>
+      <h2 id="result-title"></h2>
+      <p id="result-detail"></p>
+      <button id="restart" type="button">Chơi lại</button>
+    </section>
+    <p id="scene-error" role="alert" hidden>Không thể mở cảnh 3D. Hãy kiểm tra hỗ trợ WebGL trong trình duyệt.</p>
+    <script type="module" src="/src/web/main.js"></script>
+  </body>
+</html>
