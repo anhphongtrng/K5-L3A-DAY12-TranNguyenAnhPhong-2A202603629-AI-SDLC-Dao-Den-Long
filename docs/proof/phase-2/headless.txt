@@ -1,0 +1,5 @@
+Node v26.13.0 | Windows | snapshot every 10 ticks
+Pause replay SHA-256: E887BFCEFB36756D01931FC65D95A4EEBBA20D148693C381505155E636311BC1 (identical on two runs)
+Night 1: 0.168 s | {"type":"end","ticks":18000,"state":"lost","score":0}
+Night 2: 0.288 s | {"type":"end","ticks":19800,"state":"lost","score":0}
+Night 3: 0.313 s | {"type":"end","ticks":21600,"state":"lost","score":0}

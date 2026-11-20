@@ -1,30 +1,34 @@
 <!doctype html>
 <html lang="vi">
-  <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Đảo Đèn Lồng</title>
-  </head>
-  <body>
-    <main id="scene" aria-label="Đảo Bến trong khung cảnh đêm"></main>
-    <header>
-      <h1>Đảo Đèn Lồng</h1>
-      <p>Đêm 1 · Đảo Bến</p>
-      <dl id="hud">
-        <div><dt>Máu</dt><dd id="flames"></dd></div>
-        <div><dt>Đom đóm</dt><dd id="carried"></dd></div>
-        <div><dt>Đèn sáng</dt><dd id="lit"></dd></div>
-        <div><dt>Còn lại</dt><dd id="time"></dd></div>
-        <div><dt>Điểm</dt><dd id="score"></dd></div>
-      </dl>
-    </header>
-    <footer>WASD / phím mũi tên: di chuyển · Q / E: xoay camera · Space: nhảy · F: nạp đèn · R: tỏa sáng</footer>
-    <section id="result" aria-live="polite" hidden>
-      <h2 id="result-title"></h2>
-      <p id="result-detail"></p>
-      <button id="restart" type="button">Chơi lại</button>
-    </section>
-    <p id="scene-error" role="alert" hidden>Không thể mở cảnh 3D. Hãy kiểm tra hỗ trợ WebGL trong trình duyệt.</p>
-    <script type="module" src="/src/web/main.js"></script>
-  </body>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Đảo Đèn Lồng</title>
+</head>
+<body>
+  <main id="scene" aria-label="Đảo Đèn Lồng"></main>
+  <div id="hud" hidden>
+    <div id="flames" aria-label="Ngọn Lửa"></div>
+    <time id="time"></time>
+    <div id="score"></div>
+    <div id="motes" aria-label="Đom đóm"></div>
+    <div id="cooldowns"></div>
+    <p id="prompt"></p>
+    <div id="indicator" aria-label="Hướng tới đèn chưa sáng" hidden>↑</div>
+    <p id="wind"></p>
+    <p id="fps" hidden></p>
+  </div>
+  <section id="panel" aria-labelledby="panel-title">
+    <h1 id="panel-title"></h1>
+    <p id="panel-copy"></p>
+    <div id="settings" hidden>
+      <label>Âm lượng <input id="volume" type="range" min="0" max="1" step="0.05"></label>
+      <label>Độ nhạy chuột <input id="sensitivity" type="range" min="0.1" max="1" step="0.05"></label>
+    </div>
+    <div id="actions"></div>
+  </section>
+  <footer>WASD / ↑↓←→ di chuyển · Kéo chuột xoay camera · Space nhảy · Shift lướt · E nạp · R tỏa sáng · Esc/P tạm dừng</footer>
+  <p id="scene-error" role="alert" hidden>Không thể mở cảnh 3D. Hãy kiểm tra hỗ trợ WebGL trong trình duyệt.</p>
+  <script type="module" src="/src/web/main.js"></script>
+</body>
 </html>

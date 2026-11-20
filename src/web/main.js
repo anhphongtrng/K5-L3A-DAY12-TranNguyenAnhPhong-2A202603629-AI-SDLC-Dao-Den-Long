@@ -1,208 +1,237 @@
-import * as THREE from 'three';
-import { createGame, HZ, ISLAND_RADIUS, step, tuning } from '../game/simulation.js';
+import { createGame, HZ, nearestLantern, step, tuning } from '../game/simulation.js';
+import { horizontal, maps } from '../game/maps.js';
+import { createAudio } from './audio.js';
+import { createView } from './view.js';
 import './style.css';
 
-const byId = (id) => document.getElementById(id);
-const controls = new Set(['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowDown', 'ArrowLeft',
-  'ArrowRight', 'Space', 'KeyF', 'KeyR', 'KeyQ', 'KeyE']);
-
-function startScene() {
-  const renderer = new THREE.WebGLRenderer({ antialias: true });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-  byId('scene').append(renderer.domElement);
-  const scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x15132d);
-  scene.fog = new THREE.FogExp2(0x15132d, 0.024);
-  const ambient = new THREE.HemisphereLight(0xa9b6ff, 0x42304d, 1.35);
-  const moonlight = new THREE.DirectionalLight(0xc4ceff, 1.8);
-  moonlight.position.set(-5, 9, -3);
-  scene.add(ambient, moonlight);
-
-  function mesh(geometry, color) {
-    return new THREE.Mesh(geometry, new THREE.MeshStandardMaterial({ color, flatShading: true }));
-  }
-
-  const island = mesh(new THREE.CylinderGeometry(ISLAND_RADIUS, 15, 2.4, 64), 0x394c42);
-  island.position.y = -1.2;
-  scene.add(island);
-
-  const player = new THREE.Group();
-  const robe = mesh(new THREE.CapsuleGeometry(0.29, 0.62, 4, 8), 0x57b8ad);
-  robe.position.y = 0.62;
-  const hat = mesh(new THREE.ConeGeometry(0.55, 0.35, 12), 0xe6bd78);
-  hat.position.y = 1.25;
-  const charm = new THREE.Mesh(
-    new THREE.SphereGeometry(0.1, 8, 6),
-    new THREE.MeshBasicMaterial({ color: 0xffc574 }),
-  );
-  charm.position.set(0.39, 1, 0);
-  const pulseRing = new THREE.Mesh(
-    new THREE.RingGeometry(tuning.pulse_radius - 0.06, tuning.pulse_radius, 48),
-    new THREE.MeshBasicMaterial({ color: 0xffcf75, side: THREE.DoubleSide, transparent: true, depthWrite: false }),
-  );
-  pulseRing.rotation.x = -Math.PI / 2;
-  pulseRing.position.y = 0.06;
-  player.add(robe, hat, charm);
-  scene.add(player, pulseRing);
-
-  const camera = new THREE.PerspectiveCamera(52, 1, 0.1, 100);
-  function resize() {
-    const { clientWidth, clientHeight } = byId('scene');
-    camera.aspect = clientWidth / Math.max(1, clientHeight);
-    camera.updateProjectionMatrix();
-    renderer.setSize(clientWidth, clientHeight);
-  }
-  window.addEventListener('resize', resize);
-  resize();
-
-  const interactive = new THREE.Group();
-  scene.add(interactive);
-  const postGeometry = new THREE.CylinderGeometry(0.16, 0.22, 1.35, 8);
-  const bulbGeometry = new THREE.SphereGeometry(0.43, 10, 8);
-  const postMaterial = new THREE.MeshStandardMaterial({ color: 0x795342 });
-  const darkBulb = new THREE.MeshStandardMaterial({ color: 0x846450 });
-  const brightBulb = new THREE.MeshBasicMaterial({ color: 0xffbb66 });
-  const moteGeometry = new THREE.IcosahedronGeometry(0.12, 0);
-  const moteMaterial = new THREE.MeshBasicMaterial({ color: 0xffdc7a });
-  const shadeGeometry = new THREE.IcosahedronGeometry(0.68, 1);
-  const shadeMaterial = new THREE.MeshStandardMaterial({ color: 0x30204e, emissive: 0x22123b });
-  const stunnedMaterial = new THREE.MeshStandardMaterial({ color: 0x6b519b, emissive: 0x5f3e6c });
-  const hud = Object.fromEntries(['flames', 'carried', 'lit', 'time', 'score'].map((id) => [id, byId(id)]));
+const $ = (id) => document.getElementById(id);
+const seed = 202603629;
+const keyCodes = new Set(['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowDown', 'ArrowLeft',
+  'ArrowRight', 'Space', 'KeyE', 'KeyR', 'ShiftLeft', 'ShiftRight', 'KeyP', 'Escape']);
+const intro = {
+  1: 'Ông Đăng: Mây ơi, hãy gom đom đóm và thắp sáng năm ngọn đèn trên Đảo Bến.',
+  2: 'Ông Đăng: Cầu tre nối hai bờ. Hãy dùng bục nhảy và coi chừng Gió Lạc.',
+  3: 'Ông Đăng: Theo dốc lên tầng cao và dùng bục nhảy để tới tháp chuông.',
+};
+const metric = new URLSearchParams(location.search).has('fps');
+function settingsValue(id, fallback) {
+  const value = Number(localStorage.getItem('lantern:' + id) ?? fallback);
+  return Number.isFinite(value) ? Math.max(id === 'sensitivity' ? 0.1 : 0, Math.min(1, value)) : fallback;
+}
+function start() {
+  const view = createView($('scene'));
+  const audio = createAudio();
   const keys = new Set();
-  let game;
-  let view;
-  let yaw;
-  let accumulator;
-  let lastPulse;
+  const pending = new Set();
+  const slots = Array.from({ length: 10 }, () => $('motes').appendChild(document.createElement('span')));
+  let sensitivity = settingsValue('sensitivity', 0.45);
+  let night = 1;
+  let total = 0;
+  let game = createGame(seed);
+  let screen = 'menu';
+  let yaw = 0;
+  let elapsed = 0;
   let lastTime;
+  let lastSecond;
+  let warning = false;
+  let measurementStart;
+  let measuredFrames = 0;
+  let lastPulse = -Infinity;
+  $('volume').value = settingsValue('volume', 0.5);
+  $('sensitivity').value = sensitivity;
+  audio.volume(Number($('volume').value));
+  for (const id of ['volume', 'sensitivity']) {
+    $(id).addEventListener('input', () => {
+      const value = Number($(id).value);
+      localStorage.setItem('lantern:' + id, String(value));
+      if (id === 'volume') audio.volume(value);
+      else sensitivity = value;
+    });
+  }
 
-  function reset() {
-    game = createGame(202603629);
-    accumulator = 0;
+  function panel(next, title, copy, actions) {
+    screen = next;
+    keys.clear();
+    pending.clear();
+    $('panel').hidden = false;
+    $('panel-title').textContent = title;
+    $('panel-copy').textContent = copy;
+    $('settings').hidden = next !== 'settings';
+    $('actions').replaceChildren(...actions.map(([label, click]) => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.textContent = label;
+      button.addEventListener('click', click);
+      return button;
+    }));
+    $('actions').firstElementChild?.focus();
+    audio.music(false);
+  }
+  function menu() {
+    total = 0;
+    night = 1;
     yaw = 0;
     lastPulse = -Infinity;
-    keys.clear();
-    interactive.clear();
-    view = {
-      lanterns: game.lanterns.map((lantern) => {
-        const group = new THREE.Group();
-        group.position.fromArray(lantern.pos);
-        const post = new THREE.Mesh(postGeometry, postMaterial);
-        post.position.y = 0.675;
-        const bulb = new THREE.Mesh(bulbGeometry, darkBulb);
-        bulb.position.y = 1.5;
-        const light = new THREE.PointLight(0xffaa55, 0, 7);
-        light.position.copy(bulb.position);
-        group.add(post, bulb, light);
-        interactive.add(group);
-        return { bulb, light };
-      }),
-      motes: new Map(game.motes.map((pos) => {
-        const mote = new THREE.Mesh(moteGeometry, moteMaterial);
-        mote.position.fromArray(pos);
-        interactive.add(mote);
-        return [pos, mote];
-      })),
-      shades: game.shades.map(() => {
-        const shade = new THREE.Mesh(shadeGeometry, shadeMaterial);
-        interactive.add(shade);
-        return shade;
-      }),
-    };
-    byId('result').hidden = true;
-    renderer.domElement.focus();
+    game = createGame(seed);
+    view.reset(game);
+    $('hud').hidden = true;
+    panel('menu', 'Đảo Đèn Lồng', 'Đưa ánh sáng trở lại ba hòn đảo trước bình minh.',
+      [['Bắt đầu', briefing], ['Cài đặt', () => settings(menu)]]);
   }
-
-  renderer.domElement.tabIndex = -1;
-  byId('restart').addEventListener('click', reset);
+  function briefing() {
+    $('hud').hidden = true;
+    panel('briefing', 'Đêm ' + night + ' · ' + maps[night].name, intro[night],
+      [['Vào đảo', startNight], ['Về menu', menu]]);
+  }
+  function playScreen() {
+    screen = 'playing';
+    $('panel').hidden = true;
+    $('hud').hidden = false;
+    keys.clear();
+    pending.clear();
+    view.canvas.focus();
+    audio.music(true);
+  }
+  function startNight() {
+    audio.start();
+    game = createGame(seed, {}, night);
+    yaw = 0;
+    lastPulse = -Infinity;
+    elapsed = 0;
+    lastSecond = null;
+    measurementStart = undefined;
+    measuredFrames = 0;
+    $('fps').hidden = true;
+    warning = false;
+    view.reset(game);
+    playScreen();
+  }
+  function settings(back) {
+    panel('settings', 'Cài đặt', '', [['Quay lại', back]]);
+  }
+  function paused() {
+    panel('paused', 'Tạm dừng', 'Đêm ' + night + ' · ' + maps[night].name,
+      [['Tiếp tục', resume], ['Chơi lại Đêm', startNight], ['Cài đặt', () => settings(paused)], ['Về menu', menu]]);
+  }
+  function resume() {
+    step(game, {});
+    step(game, { ...input(), pause: true });
+    playScreen();
+  }
+  function ending(result, reason) {
+    if (result === 'won') total += game.score;
+    const title = result === 'won' ? (night === 3 ? 'Bình Minh' : 'Đảo đã sáng!') : 'Đêm đã kết thúc';
+    const copy = result === 'won' ? 'Điểm Đêm ' + night + ' là ' + game.score + ' · Tổng điểm ' + total
+      : reason === 'no_flames' ? 'Mây đã hết Ngọn Lửa.' : 'Đã hết thời gian để thắp đèn.';
+    const actions = result === 'lost' ? [['Chơi lại Đêm', startNight]]
+      : night < 3 ? [['Đêm kế tiếp', () => { night += 1; briefing(); }]] : [];
+    panel('result', title, copy, [...actions, ['Về menu', menu]]);
+  }
+  function input() {
+    const x = Number(keys.has('KeyA') || keys.has('ArrowLeft')) - Number(keys.has('KeyD') || keys.has('ArrowRight'));
+    const z = Number(keys.has('KeyW') || keys.has('ArrowUp')) - Number(keys.has('KeyS') || keys.has('ArrowDown'));
+    const has = (code) => keys.has(code) || pending.has(code);
+    const result = { move: [x, z], cam_yaw_deg: yaw, jump: has('Space'), interact: has('KeyE'),
+      pulse: has('KeyR'), dash: has('ShiftLeft') || has('ShiftRight') };
+    pending.clear();
+    return result;
+  }
   window.addEventListener('keydown', (event) => {
-    if (!controls.has(event.code) || event.target instanceof HTMLButtonElement) return;
+    if (!keyCodes.has(event.code)) return;
+    if (event.code === 'KeyP' || event.code === 'Escape') {
+      if (event.repeat || !['playing', 'paused'].includes(screen)) return;
+      event.preventDefault();
+      if (screen === 'paused') resume();
+      else {
+        step(game, { ...input(), pause: true });
+        paused();
+      }
+      return;
+    }
+    if (screen !== 'playing') return;
     event.preventDefault();
     keys.add(event.code);
+    if (!event.repeat) pending.add(event.code);
   });
   window.addEventListener('keyup', (event) => keys.delete(event.code));
-  window.addEventListener('blur', () => keys.clear());
-
-  const axis = (forward, backward) => Number(forward) - Number(backward);
+  window.addEventListener('blur', () => { keys.clear(); pending.clear(); });
+  view.canvas.addEventListener('pointerdown', (event) => {
+    if (screen === 'playing') view.canvas.setPointerCapture(event.pointerId);
+  });
+  view.canvas.addEventListener('pointermove', (event) => {
+    if (screen === 'playing' && view.canvas.hasPointerCapture(event.pointerId)) {
+      yaw = (yaw - event.movementX * sensitivity) % 360;
+    }
+  });
   function advance() {
-    yaw += axis(keys.has('KeyE'), keys.has('KeyQ')) * 2.5;
-    const events = step(game, {
-      move: [
-        axis(keys.has('KeyA') || keys.has('ArrowLeft'), keys.has('KeyD') || keys.has('ArrowRight')),
-        axis(keys.has('KeyW') || keys.has('ArrowUp'), keys.has('KeyS') || keys.has('ArrowDown')),
-      ],
-      cam_yaw_deg: yaw,
-      jump: keys.has('Space'),
-      interact: keys.has('KeyF'),
-      pulse: keys.has('KeyR'),
-    });
-    if (events.some((event) => event.name === 'pulse')) lastPulse = game.tick;
-    const ending = events.find((event) => event.name === 'game_over');
-    if (ending) {
-      byId('result-title').textContent = game.state === 'won' ? 'Đảo đã sáng!' : 'Đêm đã kết thúc';
-      const reason = {
-        all_lit: 'Bạn đã thắp cả năm đèn.',
-        no_flames: 'Mây đã hết máu.',
-        dawn: 'Đã hết thời gian để thắp đèn.',
-      }[ending.data.reason];
-      byId('result-detail').textContent = `${reason} Điểm: ${game.score}.`;
-      byId('result').hidden = false;
-      byId('restart').focus();
+    const command = input();
+    const jumping = command.jump && !game.previous.jump && game.player.grounded;
+    const events = step(game, command);
+    if (jumping && game.player.vel[1] > 0) audio.play('jump');
+    if (game.wind.warning && !warning) audio.play('wind');
+    warning = game.wind.warning;
+    const second = Math.ceil(game.time_left_s);
+    if (second !== lastSecond && second > 0 && second <= 10) audio.play('countdown');
+    lastSecond = second;
+    for (const event of events) {
+      if (event.name === 'pulse') lastPulse = game.sim_tick;
+      if (event.name === 'game_over') {
+        audio.play(event.data.result);
+        ending(event.data.result, event.data.reason);
+      } else audio.play(event.name);
     }
   }
-
-  function render(milliseconds) {
-    player.position.fromArray(game.player.pos);
-    const litCount = game.lanterns.filter((lantern) => lantern.lit).length;
-    ambient.intensity = 1.35 + litCount * 0.22;
-    game.lanterns.forEach((lantern, index) => {
-      const { bulb, light } = view.lanterns[index];
-      bulb.material = lantern.lit ? brightBulb : darkBulb;
-      light.intensity = lantern.lit ? 28 : 0;
-    });
-    const activeMotes = new Set(game.motes);
-    for (const [pos, mote] of view.motes) {
-      mote.visible = activeMotes.has(pos);
-      mote.position.y = pos[1] + 0.36 + 0.09 * Math.sin(milliseconds / 220 + pos[0]);
-    }
-    game.shades.forEach((shade, index) => {
-      view.shades[index].position.fromArray(shade.pos);
-      view.shades[index].material = shade.state === 'stunned' ? stunnedMaterial : shadeMaterial;
-    });
-    const pulseAge = game.tick - lastPulse;
-    pulseRing.visible = pulseAge < 24;
-    pulseRing.position.set(player.position.x, 0.06, player.position.z);
-    pulseRing.material.opacity = Math.max(0, 0.8 * (1 - pulseAge / 24));
-
-    const angle = THREE.MathUtils.degToRad(yaw);
-    camera.position.copy(player.position).add(new THREE.Vector3(
-      -Math.sin(angle) * 6.7, 4.6, -Math.cos(angle) * 6.7,
-    ));
-    camera.lookAt(player.position.x + Math.sin(angle) * 1.8,
-      player.position.y + 0.55, player.position.z + Math.cos(angle) * 1.8);
-    hud.flames.textContent = game.player.flames;
-    hud.carried.textContent = `${game.player.carried}/${tuning.carry_capacity}`;
-    hud.lit.textContent = `${litCount}/${tuning.lantern_count_night1}`;
-    hud.time.textContent = `${Math.ceil(game.time_left_s)} s`;
-    hud.score.textContent = game.score;
-    renderer.render(scene, camera);
+  function hud() {
+    const p = game.player;
+    const remaining = (tick) => Math.max(0, (tick - game.sim_tick) / HZ);
+    const seconds = Math.ceil(game.time_left_s);
+    const lit = game.lanterns.filter((l) => l.lit).length;
+    $('flames').textContent = 'Ngọn Lửa ' + '◆'.repeat(p.flames) + '◇'.repeat(tuning.flames - p.flames);
+    $('time').textContent = String(Math.floor(seconds / 60)).padStart(2, '0') + ':' + String(seconds % 60).padStart(2, '0');
+    $('time').classList.toggle('danger', seconds <= 30);
+    $('score').textContent = 'Đèn ' + lit + '/' + game.lanterns.length + ' · Điểm ' + game.score;
+    slots.forEach((slot, index) => slot.classList.toggle('filled', index < p.carried));
+    $('motes').setAttribute('aria-label', 'Đom đóm ' + p.carried + '/10');
+    const charm = remaining(p.charmUntil);
+    $('cooldowns').textContent = '⇢ Lướt ' + (charm ? 'Sẵn sàng' : remaining(p.dashReady).toFixed(1) + 's') +
+      ' · ✧ Tỏa Sáng ' + remaining(p.pulseReady).toFixed(1) + 's' + (charm ? ' · Bùa ' + charm.toFixed(1) + 's' : '');
+    const target = nearestLantern(game);
+    $('prompt').textContent = target && horizontal(p.pos, target.pos) <= tuning.interact_radius
+      ? 'E — Nạp ánh sáng (' + target.deposited + '/10)' : '';
+    $('wind').textContent = game.wind.warning ? 'Gió mạnh sắp tới' : game.wind.active ? 'Gió mạnh' : '';
+    const arrow = target && view.offscreen(target.pos);
+    $('indicator').hidden = !target || arrow === null;
+    if (target && arrow !== null) $('indicator').style.transform = 'rotate(' + arrow + 'rad)';
   }
-
-  reset();
-  renderer.setAnimationLoop((milliseconds) => {
-    accumulator += Math.min(0.1, (milliseconds - (lastTime ?? milliseconds)) / 1000);
-    lastTime = milliseconds;
-    while (accumulator >= 1 / HZ) {
-      if (game.state === 'playing') advance();
-      accumulator -= 1 / HZ;
+  menu();
+  view.onFrame((now) => {
+    elapsed += Math.min(0.1, (now - (lastTime ?? now)) / 1000);
+    lastTime = now;
+    while (elapsed >= 1 / HZ) {
+      elapsed -= 1 / HZ;
+      if (screen === 'playing') advance();
     }
-    render(milliseconds);
+    view.render(game, yaw, now, game.sim_tick - lastPulse);
+    if (!$('hud').hidden) hud();
+    if (screen === 'playing') {
+      if (metric) {
+        measurementStart ??= now;
+        measuredFrames += 1;
+        const sample = now - measurementStart;
+        if (sample >= 10000) {
+          $('fps').hidden = false;
+          $('fps').textContent = ((measuredFrames - 1) * 1000 / sample).toFixed(1) + ' FPS · ' +
+            innerWidth + '×' + innerHeight + ' · ' + (sample / 1000).toFixed(1) + ' s';
+          measurementStart = now;
+          measuredFrames = 1;
+        }
+      }
+    }
   });
 }
-
 try {
-  startScene();
+  start();
 } catch (error) {
-  byId('scene-error').hidden = false;
+  $('scene-error').hidden = false;
   console.error(error);
 }

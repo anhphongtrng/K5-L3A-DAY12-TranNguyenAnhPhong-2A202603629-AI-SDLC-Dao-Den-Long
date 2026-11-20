@@ -3,7 +3,7 @@
 > **Cá nhân** (1 người / 1 MSSV) · Áp dụng SDLC cùng AI để xây một **game 3D** qua **4 phase**, từ yêu cầu ban đầu tới bản phát hành.
 > **Lab board + trợ giảng:** **[Đảo Đèn Lồng Lab](https://claude.ai/artifact/Q1RYyv1dxjUczzCbd2ZnoW)**
 
-## Chơi Đêm 1
+## Chơi ba Đêm
 
 Cần Node.js 22.12+ và npm. Chạy từ gốc repo rồi mở địa chỉ **Local** mà Vite in ra.
 
@@ -17,14 +17,16 @@ Nếu PowerShell chặn `npm.ps1`, dùng `npm.cmd ci` và `npm.cmd run dev`. Dù
 | Phím | Hành động |
 |---|---|
 | WASD hoặc mũi tên | Di chuyển |
-| Q / E | Xoay camera |
+| Kéo chuột | Xoay camera |
 | Space | Nhảy |
-| F | Nạp ánh sáng vào đèn chưa thắp gần nhất |
-| R | Tỏa sáng, tốn 2 đom đóm và làm choáng Bóng Mực trong tầm |
+| Shift | Lướt |
+| E | Nạp ánh sáng vào đèn chưa thắp gần nhất |
+| R | Tỏa sáng, tốn 3 đom đóm và làm choáng Bóng Mực trong tầm |
+| Esc / P | Tạm dừng |
 
-Đi qua đom đóm để nhặt tự động. Mỗi đèn cần 5 đom đóm và có thể nạp dần. Đèn đã sáng tạo vùng an toàn. Thắp đủ 5 đèn trước khi hết 180 giây hoặc mất hết 3 máu để thắng. Chọn **Chơi lại** ở màn hình kết quả để trở về đầu màn.
+Đi qua đom đóm để nhặt tự động. Mỗi đèn cần 10 đom đóm và có thể nạp dần. Đèn đã sáng tạo vùng an toàn trước Bóng Mực. Thắp tất cả đèn khi vẫn còn Ngọn Lửa để mở Đêm tiếp theo. Nếu thua, chọn **Chơi lại Đêm**.
 
-Điểm là 10 mỗi đom đóm, 100 mỗi đèn, 20 mỗi Bóng Mực bị làm choáng. Khi thắng, cộng 2 điểm mỗi giây nguyên còn lại và 50 điểm mỗi máu còn lại. Đảo có ranh giới chặn di chuyển, nên `fall_enabled` là `false`; bị chạm không làm rơi đom đóm.
+Điểm là 10 mỗi đom đóm đã nạp, 100 mỗi đèn và 5 mỗi Bóng Mực trúng Tỏa Sáng. Khi thắng, cộng 2 điểm mỗi giây nguyên còn lại và 50 điểm mỗi Ngọn Lửa còn lại. Bình Minh hiển thị tổng điểm ba Đêm đã thắng.
 
 ### Kiểm chứng và headless
 
@@ -33,7 +35,7 @@ npm test
 node src/headless.js --seed 42 --night 1 --ticks 60 --out output.jsonl
 ```
 
-Có thể thêm `--scenario`, `--inputs` và `--snapshot-every`. Tần suất snapshot mặc định là 10 tick. Xem [Test Contract của repo](game.contract.json), [ghi chú Phase 1](docs/notes/phase-1.md) và [bằng chứng kiểm chứng](docs/proof/phase-1/README.md).
+`--night` nhận 1, 2 hoặc 3. Có thể thêm `--scenario`, `--inputs` và `--snapshot-every`. Tần suất snapshot mặc định là 10 tick. Xem [Test Contract v1.1](game.contract.json), [tiêu chí nghiệm thu Phase 2](docs/notes/phase-2.md) và [bằng chứng Phase 2](docs/proof/phase-2/README.md). Bằng chứng Phase 1 tương ứng với tag `phase-1`.
 
 ---
 

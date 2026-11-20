@@ -1,86 +1,40 @@
-body {
-  margin: 0;
-  color: #fff4df;
-  background: #15132d;
-  font-family: system-ui, sans-serif;
+* { box-sizing: border-box; }
+:root { color-scheme: dark; font-family: system-ui, sans-serif; color: #f5f1e6; background: #0e1430; }
+body { margin: 0; }
+[hidden] { display: none !important; }
+#scene { position: fixed; inset: 0; }
+canvas { display: block; touch-action: none; }
+#panel { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: min(32rem, calc(100% - 2rem)); padding: clamp(1.25rem, 4vw, 2.5rem); border: 1px solid #f2c14e70; border-radius: 1rem; background: #0e1430ee; box-shadow: 0 1rem 5rem #080b20b0; }
+h1 { margin: 0; font-size: clamp(2rem, 5vw, 3.25rem); line-height: 1.12; }
+p { line-height: 1.5; }
+#actions { display: flex; gap: 0.65rem; flex-wrap: wrap; margin-top: 1rem; }
+button { border: 1px solid #f2c14e; background: #f2c14e; color: #0e1430; border-radius: 0.4rem; padding: 0.65rem 0.85rem; font: inherit; font-weight: 650; cursor: pointer; }
+button + button { color: #f5f1e6; background: #1b2350; border-color: #f2c14e70; }
+button:focus-visible, input:focus-visible { outline: 2px solid #fff6c2; outline-offset: 3px; }
+#settings { display: grid; gap: 1rem; }
+#settings label { display: grid; gap: 0.4rem; }
+input { accent-color: #f2c14e; }
+#hud { position: fixed; inset: 0; pointer-events: none; font-size: clamp(0.78rem, 1.6vw, 1rem); font-weight: 650; }
+#hud > * { position: absolute; margin: 0; padding: 0.5rem 0.75rem; border-radius: 0.45rem; background: #0e1430df; }
+#flames { top: 1rem; left: 1rem; color: #ffb347; }
+#time { top: 1rem; left: 50%; transform: translateX(-50%); font-variant-numeric: tabular-nums; }
+#score { top: 1rem; right: 1rem; color: #f2c14e; }
+#time.danger { color: #ff5a5f; animation: blink 1s step-end infinite; }
+@keyframes blink { 50% { opacity: 0.5; } }
+#motes { bottom: 4.1rem; left: 50%; transform: translateX(-50%); display: flex; gap: 0.3rem; }
+#motes span { width: clamp(0.55rem, 2vw, 1rem); height: 0.75rem; background: #5b5f6e; border-radius: 0.2rem; }
+#motes span.filled { background: #ffe58a; }
+#cooldowns { bottom: 4.1rem; right: 1rem; }
+#prompt { bottom: 6.7rem; left: 50%; white-space: nowrap; transform: translateX(-50%); }
+#wind { top: 4rem; left: 50%; transform: translateX(-50%); }
+#indicator { top: 18%; left: calc(50% - 1rem); color: #f2c14e; font-size: 1.3rem; }
+#fps { left: 1rem; bottom: 4rem; }
+#prompt:empty, #wind:empty { display: none; }
+footer, #scene-error { position: fixed; bottom: 1rem; left: 1rem; right: 1rem; text-align: center; font-size: 0.875rem; background: #0e1430df; padding: 0.6rem; border-radius: 0.5rem; pointer-events: none; }
+#scene-error { bottom: 4rem; color: #ff5a5f; }
+@media (max-width: 750px) {
+  #cooldowns { bottom: 7rem; }
+  #motes { bottom: 5rem; }
+  #prompt { bottom: 9.5rem; }
 }
-
-#scene {
-  position: fixed;
-  inset: 0;
-}
-
-canvas {
-  display: block;
-}
-
-header, #scene-error {
-  position: relative;
-  margin: 2rem;
-  width: fit-content;
-}
-
-h1 {
-  margin: 0;
-  font-size: clamp(2rem, 5vw, 3.75rem);
-  font-weight: 600;
-}
-
-p {
-  margin: 0.5rem 0;
-  color: #dfc7ad;
-}
-
-#hud {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.65rem;
-  margin: 1rem 0 0;
-}
-
-#hud div, footer, #result {
-  background: #141126df;
-  border: 1px solid #615778;
-  border-radius: 0.6rem;
-  padding: 0.55rem 0.85rem;
-}
-
-dt {
-  color: #dfc7ad;
-  font-size: 0.875rem;
-}
-
-dd {
-  margin: 0;
-  font-weight: 700;
-}
-
-footer {
-  position: fixed;
-  bottom: 1rem;
-  left: 1rem;
-  right: 1rem;
-  width: fit-content;
-  max-width: calc(100vw - 4rem);
-}
-
-#result {
-  position: fixed;
-  inset: 50% auto auto 50%;
-  transform: translate(-50%, -50%);
-  min-width: 14rem;
-  padding: 1.5rem;
-  text-align: center;
-}
-
-button {
-  padding: 0.6rem 1rem;
-  margin-top: 0.6rem;
-  border: 0;
-  border-radius: 0.4rem;
-  background: #ffcb80;
-  color: #231a29;
-  font: inherit;
-  font-weight: 700;
-  cursor: pointer;
-}
+@media (prefers-reduced-motion: reduce) { #time.danger { animation: none; } }
